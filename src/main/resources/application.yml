@@ -1,0 +1,3 @@
+adapters:
+  technology-ms:
+    url: "http://localhost:8081/technologies/"
