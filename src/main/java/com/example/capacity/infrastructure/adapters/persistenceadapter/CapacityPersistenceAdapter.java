@@ -8,6 +8,7 @@ import com.example.capacity.infrastructure.adapters.persistenceadapter.mapper.Ca
 import com.example.capacity.infrastructure.adapters.persistenceadapter.repository.CapacityRepository;
 import com.example.capacity.infrastructure.adapters.persistenceadapter.repository.CapacityTechnologyRepository;
 import lombok.AllArgsConstructor;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -36,5 +37,11 @@ public class CapacityPersistenceAdapter implements CapacityPersistencePort {
                 .map(capacityEntityMapper::toModel)
                 .map(cap -> true)
                 .defaultIfEmpty(false);
+    }
+
+    @Override
+    public Flux<Capacity> findAll() {
+        return capacityRepository.findAll()
+                .map(capacityEntityMapper::toModel);
     }
 }

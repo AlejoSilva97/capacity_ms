@@ -7,6 +7,7 @@ import com.example.capacity.domain.model.Technology;
 import com.example.capacity.domain.spi.CapacityPersistencePort;
 import com.example.capacity.domain.api.CapacityServicePort;
 import com.example.capacity.domain.spi.TechnologyExternalService;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.HashSet;
@@ -48,5 +49,10 @@ public class CapacityUseCase implements CapacityServicePort {
         }
         Set<Long> uniqueIds = new HashSet<>(ids);
         return uniqueIds.size() == ids.size();
+    }
+
+    @Override
+    public Flux<Capacity> getAllCapacities() {
+        return capacityPersistencePort.findAll();
     }
 }

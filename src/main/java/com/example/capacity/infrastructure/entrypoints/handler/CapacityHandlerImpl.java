@@ -3,6 +3,7 @@ package com.example.capacity.infrastructure.entrypoints.handler;
 import com.example.capacity.domain.api.CapacityServicePort;
 import com.example.capacity.domain.enums.TechnicalMessage;
 import com.example.capacity.infrastructure.entrypoints.dto.CapacityDTO;
+import com.example.capacity.infrastructure.entrypoints.dto.CapacityResponseDTO;
 import com.example.capacity.infrastructure.entrypoints.mapper.CapacityMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Component
@@ -29,5 +31,15 @@ public class CapacityHandlerImpl {
                 .flatMap(savedCapacity -> ServerResponse
                         .status(HttpStatus.CREATED)
                         .bodyValue(TechnicalMessage.CAPACITY_CREATED.getMessage()));
+    }
+
+    public Mono<ServerResponse> getAllCapacities(ServerRequest request) {
+        return capacityServicePort.getAllCapacities()
+                .map(capacityMapper::capacityToCapacityResponseDTO)
+                .collectList()
+                .flatMap(list -> ServerResponse
+                        .ok()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(list));
     }
 }
