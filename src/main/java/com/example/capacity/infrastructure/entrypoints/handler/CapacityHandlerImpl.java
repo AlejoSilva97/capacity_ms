@@ -34,7 +34,12 @@ public class CapacityHandlerImpl {
     }
 
     public Mono<ServerResponse> getAllCapacities(ServerRequest request) {
-        return capacityServicePort.getAllCapacities()
+        int page = request.queryParam("page").map(Integer::parseInt).orElse(0);
+        int size = request.queryParam("size").map(Integer::parseInt).orElse(10);
+        String sortBy = request.queryParam("sortBy").orElse("name");
+        String direction = request.queryParam("direction").orElse("asc");
+
+        return capacityServicePort.getAllCapacities(page, size, sortBy, direction)
                 .map(capacityMapper::capacityToCapacityResponseDTO)
                 .collectList()
                 .flatMap(list -> ServerResponse

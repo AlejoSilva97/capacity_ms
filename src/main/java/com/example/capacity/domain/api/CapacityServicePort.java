@@ -6,5 +6,5 @@ import reactor.core.publisher.Mono;
 
 public interface CapacityServicePort {
     Mono<Capacity> registerCapacity(Capacity capacity);
-    Flux<Capacity> getAllCapacities();
+    Flux<Capacity> getAllCapacities(int page, int size, String sortBy, String direction);
 }

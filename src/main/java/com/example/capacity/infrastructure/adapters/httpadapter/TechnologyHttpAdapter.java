@@ -35,4 +35,15 @@ public class TechnologyHttpAdapter implements TechnologyExternalService {
                 .then();
 
     }
+
+    @Override
+    public Flux<Technology> getTechnologiesByIds(List<Long> ids) {
+        return Flux.fromIterable(ids)
+                .flatMap(id -> technologyWebClient.get()
+                        .uri("/{id}", id)
+                        .retrieve()
+                        .bodyToMono(Technology.class)
+                        .onErrorResume(e -> Mono.empty())
+                );
+    }
 }
