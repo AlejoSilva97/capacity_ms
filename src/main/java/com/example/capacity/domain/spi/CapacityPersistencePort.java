@@ -7,5 +7,5 @@ import reactor.core.publisher.Mono;
 public interface CapacityPersistencePort {
     Mono<Capacity> save(Capacity user);
     Mono<Boolean> existByName(String name);
-    Flux<Capacity> findAll();
+    Flux<Capacity> findAll(int page, int size, String sortBy, String direction);
 }

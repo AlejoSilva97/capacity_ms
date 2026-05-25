@@ -12,6 +12,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class CapacityUseCase implements CapacityServicePort {
@@ -52,7 +53,42 @@ public class CapacityUseCase implements CapacityServicePort {
     }
 
     @Override
-    public Flux<Capacity> getAllCapacities() {
-        return capacityPersistencePort.findAll();
+    public Flux<Capacity> getAllCapacities(int page, int size, String sortBy, String direction) {
+        return capacityPersistencePort.findAll(page, size, sortBy, direction)
+                .collectList()
+                .filter(capacities -> !capacities.isEmpty())
+                .flatMapMany(this::enrichCapacitiesWithTechnologies)
+                .switchIfEmpty(Flux.empty());
+    }
+
+    private Flux<Capacity> enrichCapacitiesWithTechnologies(List<Capacity> capacities) {
+        List<Long> techIds = getTechIds(capacities);
+
+        if (techIds.isEmpty()) {
+            return Flux.fromIterable(capacities);
+        }
+
+        return technologyExternalService.getTechnologiesByIds(techIds)
+                .collectMap(Technology::id, tech -> tech)
+                .flatMapMany(techMap -> enrichCapacityList(capacities, techMap));
+    }
+
+    private Flux<Capacity> enrichCapacityList(List<Capacity> capacities, Map<Long, Technology> techMap) {
+        return Flux.fromIterable(capacities)
+                .map(capacity -> {
+                    List<Technology> enrichedTechs = capacity.technologies().stream()
+                            .map(t -> techMap.getOrDefault(t.id(), new Technology(t.id(), "Unknown")))
+                            .toList();
+
+                    return new Capacity(capacity.id(), capacity.name(), capacity.description(), enrichedTechs);
+                });
+    }
+
+    private List<Long> getTechIds(List<Capacity> capacities) {
+        return capacities.stream()
+                .flatMap(c -> c.technologies().stream())
+                .map(Technology::id)
+                .distinct()
+                .toList();
     }
 }
