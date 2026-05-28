@@ -8,10 +8,12 @@ import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.Collection;
+
 
 @Repository
 public interface CapacityRepository extends ReactiveCrudRepository<CapacityEntity, Long> {
-    Mono<CapacityEntity> findByName(String name);
+    Mono<Boolean> existsByName(String name);
     Flux<CapacityEntity> findAllBy(Pageable pageable);
 
     @Query("SELECT c.* FROM capacities c " +
@@ -27,4 +29,5 @@ public interface CapacityRepository extends ReactiveCrudRepository<CapacityEntit
             "ORDER BY COUNT(ct.id_technology) DESC " +
             "LIMIT :limit OFFSET :offset")
     Flux<CapacityEntity> findAllSortedByTechCountDesc(int limit, long offset);
+    Mono<Long> countByIdIn(Collection<Long> ids);
 }

@@ -31,16 +31,13 @@ public class CapacityPersistenceAdapter implements CapacityPersistencePort {
                             .map(techs -> new CapacityTechnologyEntity(null, savedEntity.getId(), techs.id()))
                             .toList();
                     return capacityTechnologyRepository.saveAll(capacityTechnologies)
-                            .then(Mono.just(capacityEntityMapper.toModel(savedEntity)));
+                            .then(Mono.just(capacityEntityMapper.toModel(savedEntity, capacity.technologies())));
                 });
     }
 
     @Override
     public Mono<Boolean> existByName(String name) {
-        return capacityRepository.findByName(name)
-                .map(capacityEntityMapper::toModel)
-                .map(cap -> true)
-                .defaultIfEmpty(false);
+        return capacityRepository.existsByName(name);
     }
 
     @Override
@@ -83,5 +80,19 @@ public class CapacityPersistenceAdapter implements CapacityPersistencePort {
 
                     return new Capacity(entity.getId(), entity.getName(), entity.getDescription(), techs);
                 });
+    }
+
+    @Override
+    public Mono<Long> countByIds(List<Long> ids) {
+        return capacityRepository.countByIdIn(ids);
+    }
+
+    @Override
+    public Flux<Capacity> findAllByIds(List<Long> ids) {
+        return capacityRepository.findAllById(ids)
+                .collectList()
+                .filter(entities -> !entities.isEmpty())
+                .flatMapMany(this::enrichEntitiesWithRelations)
+                .switchIfEmpty(Flux.empty());
     }
 }

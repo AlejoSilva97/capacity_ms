@@ -4,8 +4,12 @@ import com.example.capacity.domain.model.Capacity;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 public interface CapacityPersistencePort {
-    Mono<Capacity> save(Capacity user);
+    Mono<Capacity> save(Capacity capacity);
     Mono<Boolean> existByName(String name);
     Flux<Capacity> findAll(int page, int size, String sortBy, String direction);
+    Mono<Long> countByIds(List<Long> ids);
+    Flux<Capacity> findAllByIds(List<Long> ids);
 }

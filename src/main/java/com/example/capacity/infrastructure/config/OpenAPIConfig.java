@@ -12,8 +12,8 @@ public class OpenAPIConfig {
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("Resilient Technology API")
+                        .title("Capacity API")
                         .version("1.0.0")
-                        .description("Microservicio reactivo para la gestión de tecnologías utilizando Arquitectura Hexagonal."));
+                        .description("Microservicio reactivo para la gestión de capacidades utilizando Arquitectura Hexagonal."));
     }
 }

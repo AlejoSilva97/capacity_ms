@@ -1,7 +1,10 @@
 package com.example.capacity.domain.usecase;
 
+import com.example.capacity.domain.constants.Constants;
 import com.example.capacity.domain.enums.TechnicalMessage;
 import com.example.capacity.domain.exceptions.BusinessException;
+import com.example.capacity.domain.exceptions.CapacityAlreadyExistsException;
+import com.example.capacity.domain.exceptions.InvalidFieldException;
 import com.example.capacity.domain.model.Capacity;
 import com.example.capacity.domain.model.Technology;
 import com.example.capacity.domain.spi.CapacityPersistencePort;
@@ -31,12 +34,12 @@ public class CapacityUseCase implements CapacityServicePort {
                 .map(Technology::id)
                 .toList();
         if (!validateIds(ids)) {
-            return Mono.error(new BusinessException(TechnicalMessage.INVALID_TECHNOLOGY_IDS));
+            return Mono.error(new InvalidFieldException(Constants.DUPLICATE_TECHNOLOGIES_NOT_ALLOWED));
         }
         return capacityPersistencePort.existByName(capacity.name())
                 .flatMap(exists -> {
                     if (Boolean.TRUE.equals(exists)) {
-                        return Mono.error(new BusinessException(TechnicalMessage.CAPACITY_ALREADY_EXISTS));
+                        return Mono.error(new CapacityAlreadyExistsException(String.format(Constants.CAPACITY_ALREADY_EXISTS, capacity.name())));
                     }
 
                     return technologyExternalService.verifyTechnologiesById(ids)
@@ -45,9 +48,6 @@ public class CapacityUseCase implements CapacityServicePort {
     }
 
     private static Boolean validateIds(List<Long> ids) {
-        if (ids == null || ids.size() > 20) {
-            return false;
-        }
         Set<Long> uniqueIds = new HashSet<>(ids);
         return uniqueIds.size() == ids.size();
     }
@@ -90,5 +90,37 @@ public class CapacityUseCase implements CapacityServicePort {
                 .map(Technology::id)
                 .distinct()
                 .toList();
+    }
+
+    @Override
+    public Mono<Boolean> validateCapacitiesExist(List<Long> ids) {
+        if (org.springframework.util.CollectionUtils.isEmpty(ids)) {
+            return Mono.just(false);
+        }
+
+        List<Long> uniqueIds = ids.stream().distinct().toList();
+
+        return validateSize(uniqueIds)
+                .then(capacityPersistencePort.countByIds(uniqueIds))
+                .map(count -> count == uniqueIds.size());
+    }
+
+    private Mono<Void> validateSize(List<Long> uniqueIds) {
+        return uniqueIds.size() > 4
+                ? Mono.error(new BusinessException(TechnicalMessage.INVALID_PARAMETERS))
+                : Mono.empty();
+    }
+
+    @Override
+    public Flux<Capacity> getCapacitiesByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty() || ids.size() > 4) {
+            return Flux.error(new BusinessException(TechnicalMessage.INVALID_PARAMETERS));
+        }
+        List<Long> uniqueIds = ids.stream().distinct().toList();
+        return capacityPersistencePort.findAllByIds(uniqueIds)
+                .collectList()
+                .filter(capacities -> !capacities.isEmpty())
+                .flatMapMany(this::enrichCapacitiesWithTechnologies)
+                .switchIfEmpty(Flux.empty());
     }
 }

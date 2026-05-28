@@ -1,7 +1,7 @@
 package com.example.capacity.infrastructure.adapters.httpadapter;
 
-import com.example.capacity.domain.enums.TechnicalMessage;
-import com.example.capacity.domain.exceptions.BusinessException;
+import com.example.capacity.domain.constants.Constants;
+import com.example.capacity.domain.exceptions.TechnologyNotFoundException;
 import com.example.capacity.domain.model.Technology;
 import com.example.capacity.domain.spi.TechnologyExternalService;
 import org.springframework.stereotype.Component;
@@ -25,15 +25,14 @@ public class TechnologyHttpAdapter implements TechnologyExternalService {
     public Mono<Void> verifyTechnologiesById(List<Long> ids) {
         return Flux.fromIterable(ids)
                 .flatMap(id -> technologyWebClient.get()
-                        .uri("/{id}", id)
+                        .uri("/technologies/{id}", id)
                         .retrieve()
                         .bodyToMono(Object.class)
                         .onErrorResume(e -> Mono.error(
-                                    new BusinessException(TechnicalMessage.TECHNOLOGY_NOT_EXISTS)
+                                new TechnologyNotFoundException(String.format(Constants.TECHNOLOGY_NOT_FOUND, id))
                             ))
                 )
                 .then();
-
     }
 
     @Override
