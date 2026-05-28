@@ -1,8 +1,9 @@
 package com.example.capacity.infrastructure.entrypoints.handler;
 
+import com.example.capacity.domain.constants.Constants;
 import com.example.capacity.domain.enums.TechnicalMessage;
-import com.example.capacity.domain.exceptions.BusinessException;
-import com.example.capacity.domain.exceptions.TechnicalException;
+import com.example.capacity.domain.exceptions.*;
+import com.example.capacity.infrastructure.entrypoints.dto.ErrorResponseDTO;
 import com.example.capacity.infrastructure.entrypoints.util.APIResponse;
 import com.example.capacity.infrastructure.entrypoints.util.ErrorDTO;
 import lombok.extern.slf4j.Slf4j;
@@ -43,6 +44,21 @@ public class GlobalExceptionHandler extends AbstractErrorWebExceptionHandler {
     private Mono<ServerResponse> renderErrorResponse(ServerRequest request) {
         Throwable error = getError(request);
 
+        if (error instanceof InvalidFieldException invalidFieldException) {
+            log.warn("Business rule violation: {}", invalidFieldException.getMessage());
+            return buildErrorDTO(HttpStatus.BAD_REQUEST, Constants.INVALID_FIELD_CODE, invalidFieldException.getMessage());
+        }
+
+        if (error instanceof CapacityAlreadyExistsException capacityExistsException) {
+            log.warn("Business rule violation: {}", capacityExistsException.getMessage());
+            return buildErrorDTO(HttpStatus.CONFLICT, Constants.CAPACITY_ALREADY_EXISTS_CODE, capacityExistsException.getMessage());
+        }
+
+        if (error instanceof TechnologyNotFoundException technologyNotFoundException) {
+            log.warn("Business rule violation: {}", technologyNotFoundException.getMessage());
+            return buildErrorDTO(HttpStatus.NOT_FOUND, Constants.TECHNOLOGY_NOT_FOUND_CODE, technologyNotFoundException.getMessage());
+        }
+
         if (error instanceof BusinessException businessEx) {
             log.warn("Business rule violation: {}", businessEx.getMessage());
             return buildResponse(HttpStatus.BAD_REQUEST, TechnicalMessage.INVALID_PARAMETERS,
@@ -82,5 +98,16 @@ public class GlobalExceptionHandler extends AbstractErrorWebExceptionHandler {
         return ServerResponse.status(httpStatus)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(apiErrorResponse);
+    }
+
+    private Mono<ServerResponse> buildErrorDTO(HttpStatus status, String code, String message) {
+        ErrorResponseDTO errorResponse = ErrorResponseDTO.builder()
+                .code(code)
+                .message(message)
+                .build();
+
+        return ServerResponse.status(status)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(errorResponse);
     }
 }
