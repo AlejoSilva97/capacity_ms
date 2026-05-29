@@ -1,8 +1,12 @@
 package com.example.capacity.infrastructure.entrypoints;
 
 import com.example.capacity.infrastructure.entrypoints.dto.CapacityDTO;
+import com.example.capacity.infrastructure.entrypoints.dto.CapacityResponseDTO;
 import com.example.capacity.infrastructure.entrypoints.handler.CapacityHandlerImpl;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
@@ -44,6 +48,31 @@ public class RouterRest {
                                             content = @Content(schema = @Schema(implementation = String.class))
                                     ),
                                     @ApiResponse(responseCode = "400", description = "Validation or business error")
+                            }
+                    )
+            ),
+            @RouterOperation(
+                    path = "/capacities",
+                    method = RequestMethod.GET,
+                    beanClass = CapacityHandlerImpl.class,
+                    beanMethod = "getAllCapacities",
+                    operation = @Operation(
+                            summary = "Listar capacidades con paginación y ordenamiento dinámico",
+                            description = "Retorna un flujo paginado de capacidades enriquecidas con sus tecnologías. Permite ordenar alfabéticamente por 'name' o por la cantidad de tecnologías usando 'technologies'.",
+                            operationId = "getAllCapacities",
+                            parameters = {
+                                    @Parameter(name = "page", in = ParameterIn.QUERY, description = "Número de la página a consultar (basado en índice 0)", schema = @Schema(type = "integer", defaultValue = "0")),
+                                    @Parameter(name = "size", in = ParameterIn.QUERY, description = "Cantidad máxima de registros por página", schema = @Schema(type = "integer", defaultValue = "10")),
+                                    @Parameter(name = "sortBy", in = ParameterIn.QUERY, description = "Campo de ordenamiento ('name' o 'technologies')", schema = @Schema(type = "string", defaultValue = "name")),
+                                    @Parameter(name = "direction", in = ParameterIn.QUERY, description = "Sentido del ordenamiento ('ASC' o 'DESC')", schema = @Schema(type = "string", defaultValue = "DESC"))
+                            },
+                            responses = {
+                                    @ApiResponse(
+                                            responseCode = "200",
+                                            description = "Lista de capacidades paginada y ordenada obtenida con éxito",
+                                            content = @Content(array = @ArraySchema(schema = @Schema(implementation = CapacityResponseDTO.class)))
+                                    ),
+                                    @ApiResponse(responseCode = "400", description = "Parámetros de consulta inválidos o con formato incorrecto")
                             }
                     )
             )

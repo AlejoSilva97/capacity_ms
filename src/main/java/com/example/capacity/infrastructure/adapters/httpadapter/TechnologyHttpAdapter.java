@@ -39,7 +39,7 @@ public class TechnologyHttpAdapter implements TechnologyExternalService {
     public Flux<Technology> getTechnologiesByIds(List<Long> ids) {
         return Flux.fromIterable(ids)
                 .flatMap(id -> technologyWebClient.get()
-                        .uri("/{id}", id)
+                        .uri("/technologies/{id}", id)
                         .retrieve()
                         .bodyToMono(Technology.class)
                         .onErrorResume(e -> Mono.empty())

@@ -11,6 +11,7 @@ import com.example.capacity.infrastructure.adapters.persistenceadapter.repositor
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.r2dbc.core.DatabaseClient;
 
 @Configuration
 @RequiredArgsConstructor
@@ -18,10 +19,11 @@ public class UseCasesConfig {
         private final CapacityRepository capacityRepository;
         private final CapacityTechnologyRepository capacityTechnologyRepository;
         private final CapacityEntityMapper capacityEntityMapper;
+        private final DatabaseClient databaseClient;
 
         @Bean
         public CapacityPersistencePort capacitiesPersistencePort() {
-                return new CapacityPersistenceAdapter(capacityRepository, capacityTechnologyRepository, capacityEntityMapper);
+                return new CapacityPersistenceAdapter(capacityRepository, capacityTechnologyRepository, capacityEntityMapper, databaseClient);
         }
 
         @Bean

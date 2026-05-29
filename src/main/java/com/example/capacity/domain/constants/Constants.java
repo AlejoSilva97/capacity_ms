@@ -4,6 +4,7 @@ public class Constants {
     public static final String CAPACITY_ALREADY_EXISTS_CODE = "E-001";
     public static final String TECHNOLOGY_NOT_FOUND_CODE = "E-002";
     public static final String INVALID_FIELD_CODE = "E-003";
+    public static final String CAPACITY_CREATED = "Capacity created successfully";
     public static final String CAPACITY_ALREADY_EXISTS = "Capacity with name %s already exists";
     public static final String TECHNOLOGIES_SIZE_VALIDATION_MESSAGE = "The technology list must contain between 3 and 20 items";
     public static final String CAPACITY_NAME_REQUIRED = "Capacity name is required";
