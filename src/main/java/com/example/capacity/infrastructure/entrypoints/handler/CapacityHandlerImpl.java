@@ -4,6 +4,7 @@ import com.example.capacity.domain.api.CapacityServicePort;
 import com.example.capacity.domain.constants.Constants;
 import com.example.capacity.domain.enums.TechnicalMessage;
 import com.example.capacity.domain.exceptions.BusinessException;
+import com.example.capacity.domain.model.PaginationParams;
 import com.example.capacity.infrastructure.entrypoints.dto.CapacityDTO;
 import com.example.capacity.infrastructure.entrypoints.mapper.CapacityMapper;
 import lombok.RequiredArgsConstructor;
@@ -39,9 +40,11 @@ public class CapacityHandlerImpl {
         int page = request.queryParam("page").map(Integer::parseInt).orElse(0);
         int size = request.queryParam("size").map(Integer::parseInt).orElse(10);
         String sortBy = request.queryParam("sortBy").orElse("name");
-        String direction = request.queryParam("direction").orElse("asc");
+        String direction = request.queryParam("direction").orElse("DESC");
 
-        return capacityServicePort.getAllCapacities(page, size, sortBy, direction)
+        PaginationParams params = new PaginationParams(page,size, sortBy, direction);
+
+        return capacityServicePort.getAllCapacities(params)
                 .map(capacityMapper::capacityToCapacityResponseDTO)
                 .collectList()
                 .flatMap(list -> ServerResponse

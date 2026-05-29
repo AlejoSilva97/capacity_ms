@@ -1,20 +1,20 @@
 package com.example.capacity.infrastructure.adapters.persistenceadapter;
 
 import com.example.capacity.domain.model.Capacity;
+import com.example.capacity.domain.model.PaginationParams;
 import com.example.capacity.domain.model.Technology;
 import com.example.capacity.domain.spi.CapacityPersistencePort;
+import com.example.capacity.infrastructure.adapters.persistenceadapter.constants.DatabaseConstants;
 import com.example.capacity.infrastructure.adapters.persistenceadapter.entity.CapacityEntity;
 import com.example.capacity.infrastructure.adapters.persistenceadapter.entity.CapacityTechnologyEntity;
 import com.example.capacity.infrastructure.adapters.persistenceadapter.mapper.CapacityEntityMapper;
 import com.example.capacity.infrastructure.adapters.persistenceadapter.repository.CapacityRepository;
 import com.example.capacity.infrastructure.adapters.persistenceadapter.repository.CapacityTechnologyRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.r2dbc.core.DatabaseClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import java.util.List;
 
 @AllArgsConstructor
@@ -22,6 +22,7 @@ public class CapacityPersistenceAdapter implements CapacityPersistencePort {
     private final CapacityRepository capacityRepository;
     private final CapacityTechnologyRepository capacityTechnologyRepository;
     private final CapacityEntityMapper capacityEntityMapper;
+    private final DatabaseClient databaseClient;
 
     @Override
     public Mono<Capacity> save(Capacity capacity) {
@@ -41,25 +42,30 @@ public class CapacityPersistenceAdapter implements CapacityPersistencePort {
     }
 
     @Override
-    public Flux<Capacity> findAll(int page, int size, String sortBy, String direction) {
-        return resolveEntityFlux(page, size, sortBy, direction)
+    public Flux<Capacity> findAll(PaginationParams params) {
+        final String query = buildQuery(params);
+
+        return databaseClient.sql(query)
+                .bind(DatabaseConstants.SIZE, params.size())
+                .bind(DatabaseConstants.OFFSET, (long) params.page() * params.size())
+                .map(capacityEntityMapper::rowToEntity)
+                .all()
                 .collectList()
                 .filter(entities -> !entities.isEmpty())
                 .flatMapMany(this::enrichEntitiesWithRelations)
                 .switchIfEmpty(Flux.empty());
     }
 
-    private Flux<CapacityEntity> resolveEntityFlux(int page, int size, String sortBy, String direction) {
-        if ("technologies".equalsIgnoreCase(sortBy)) {
-            int offset = page * size;
-            return "desc".equalsIgnoreCase(direction)
-                    ? capacityRepository.findAllSortedByTechCountDesc(size, offset)
-                    : capacityRepository.findAllSortedByTechCountAsc(size, offset);
-        }
+    private static String buildQuery(PaginationParams params) {
+        String sortColumn = DatabaseConstants.SORT_BY_TECHNOLOGIES.equalsIgnoreCase(params.sortBy())
+                ? DatabaseConstants.SORT_BY_COUNT
+                : DatabaseConstants.SORT_BY_NAME;
 
-        Sort.Direction dir = "desc".equalsIgnoreCase(direction) ? Sort.Direction.DESC : Sort.Direction.ASC;
-        Pageable pageable = PageRequest.of(page, size, Sort.by(dir, "name"));
-        return capacityRepository.findAllBy(pageable);
+        String sortOrder = DatabaseConstants.ASC.equalsIgnoreCase(params.direction())
+                ? DatabaseConstants.ASC
+                : DatabaseConstants.DESC;
+
+        return String.format(DatabaseConstants.QUERY, sortColumn, sortOrder);
     }
 
     private Flux<Capacity> enrichEntitiesWithRelations(List<CapacityEntity> entities) {

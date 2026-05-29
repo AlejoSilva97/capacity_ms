@@ -6,6 +6,7 @@ import com.example.capacity.domain.exceptions.BusinessException;
 import com.example.capacity.domain.exceptions.CapacityAlreadyExistsException;
 import com.example.capacity.domain.exceptions.InvalidFieldException;
 import com.example.capacity.domain.model.Capacity;
+import com.example.capacity.domain.model.PaginationParams;
 import com.example.capacity.domain.model.Technology;
 import com.example.capacity.domain.spi.CapacityPersistencePort;
 import com.example.capacity.domain.api.CapacityServicePort;
@@ -53,8 +54,8 @@ public class CapacityUseCase implements CapacityServicePort {
     }
 
     @Override
-    public Flux<Capacity> getAllCapacities(int page, int size, String sortBy, String direction) {
-        return capacityPersistencePort.findAll(page, size, sortBy, direction)
+    public Flux<Capacity> getAllCapacities(PaginationParams params) {
+        return capacityPersistencePort.findAll(params)
                 .collectList()
                 .filter(capacities -> !capacities.isEmpty())
                 .flatMapMany(this::enrichCapacitiesWithTechnologies)
@@ -117,10 +118,11 @@ public class CapacityUseCase implements CapacityServicePort {
             return Flux.error(new BusinessException(TechnicalMessage.INVALID_PARAMETERS));
         }
         List<Long> uniqueIds = ids.stream().distinct().toList();
-        return capacityPersistencePort.findAllByIds(uniqueIds)
-                .collectList()
-                .filter(capacities -> !capacities.isEmpty())
-                .flatMapMany(this::enrichCapacitiesWithTechnologies)
-                .switchIfEmpty(Flux.empty());
+//        return capacityPersistencePort.findAllByIds(uniqueIds)
+//                .collectList()
+//                .filter(capacities -> !capacities.isEmpty())
+//                .flatMapMany(this::enrichCapacitiesWithTechnologies)
+//                .switchIfEmpty(Flux.empty());
+        return Flux.empty();
     }
 }
