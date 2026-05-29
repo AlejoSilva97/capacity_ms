@@ -3,7 +3,6 @@ package com.example.capacity.domain.usecase;
 import com.example.capacity.domain.constants.Constants;
 import com.example.capacity.domain.exceptions.CapacityAlreadyExistsException;
 import com.example.capacity.domain.exceptions.InvalidFieldException;
-import com.example.capacity.domain.exceptions.TechnologyNotFoundException;
 import com.example.capacity.domain.model.Capacity;
 import com.example.capacity.domain.model.PaginationParams;
 import com.example.capacity.domain.model.Technology;
@@ -45,7 +44,6 @@ class CapacityUseCaseTest {
         @Test
         @DisplayName("Should register capacity successfully when fields and rules are valid")
         void registerCapacity_Success() {
-            // Arrange
             List<Technology> technologies = List.of(
                     new Technology(1L, null),
                     new Technology(2L, null),
@@ -58,7 +56,6 @@ class CapacityUseCaseTest {
             when(technologyExternalService.verifyTechnologiesById(any())).thenReturn(Mono.empty());
             when(capacityPersistencePort.save(inputCapacity)).thenReturn(Mono.just(savedCapacity));
 
-            // Act & Assert
             StepVerifier.create(capacityUseCase.registerCapacity(inputCapacity))
                     .expectNext(savedCapacity)
                     .verifyComplete();
@@ -71,7 +68,6 @@ class CapacityUseCaseTest {
         @Test
         @DisplayName("Should throw InvalidFieldException when technology ids are duplicated")
         void registerCapacity_ThrowsInvalidFieldException_WhenDuplicateTechnologies() {
-            // Arrange
             List<Technology> duplicatedTechnologies = List.of(
                     new Technology(1L, null),
                     new Technology(1L, null),
@@ -79,7 +75,6 @@ class CapacityUseCaseTest {
             );
             Capacity capacity = new Capacity(null, "Frontend Developer", "Web development", duplicatedTechnologies);
 
-            // Act & Assert
             StepVerifier.create(capacityUseCase.registerCapacity(capacity))
                     .expectErrorMatches(throwable -> throwable instanceof InvalidFieldException
                             && throwable.getMessage().equals(Constants.DUPLICATE_TECHNOLOGIES_NOT_ALLOWED))
@@ -92,7 +87,6 @@ class CapacityUseCaseTest {
         @Test
         @DisplayName("Should throw CapacityAlreadyExistsException when capacity name already exists")
         void registerCapacity_ThrowsCapacityAlreadyExistsException_WhenNameExists() {
-            // Arrange
             List<Technology> technologies = List.of(
                     new Technology(1L, null),
                     new Technology(2L, null),
@@ -103,7 +97,6 @@ class CapacityUseCaseTest {
 
             when(capacityPersistencePort.existByName(capacity.name())).thenReturn(Mono.just(true));
 
-            // Act & Assert
             StepVerifier.create(capacityUseCase.registerCapacity(capacity))
                     .expectErrorMatches(throwable -> throwable instanceof CapacityAlreadyExistsException
                             && throwable.getMessage().equals(expectedErrorMessage))
@@ -123,7 +116,6 @@ class CapacityUseCaseTest {
         @Test
         @DisplayName("Should return enriched capacities flux when persistence port contains data")
         void getAllCapacities_Success_WithEnrichment() {
-            // Arrange
             PaginationParams params = new PaginationParams(0, 10, "name", "ASC");
 
             List<Technology> initialTechs1 = List.of(new Technology(1L, null), new Technology(2L, null), new Technology(3L, null));
@@ -141,17 +133,14 @@ class CapacityUseCaseTest {
             when(technologyExternalService.getTechnologiesByIds(List.of(1L, 2L, 3L, 4L)))
                     .thenReturn(Flux.just(fullTech1, fullTech2, fullTech3, fullTech4));
 
-            // Act & Assert
             StepVerifier.create(capacityUseCase.getAllCapacities(params))
                     .assertNext(cap -> {
-                        // Verifica la primera capacidad enriquecida
                         assert cap.id().equals(1L);
                         assert cap.technologies().get(0).name().equals("Java");
                         assert cap.technologies().get(1).name().equals("Spring");
                         assert cap.technologies().get(2).name().equals("Reactor");
                     })
                     .assertNext(cap -> {
-                        // Verifica la segunda capacidad enriquecida
                         assert cap.id().equals(2L);
                         assert cap.technologies().get(0).name().equals("Spring");
                         assert cap.technologies().get(1).name().equals("Reactor");
@@ -166,13 +155,11 @@ class CapacityUseCaseTest {
         @Test
         @DisplayName("Should return empty flux when database returns no results")
         void getAllCapacities_ReturnsEmptyFlux_WhenNoResults() {
-            // Arrange
             PaginationParams params = new PaginationParams(0, 10, "name", "ASC");
             when(capacityPersistencePort.findAll(params)).thenReturn(Flux.empty());
 
-            // Act & Assert
             StepVerifier.create(capacityUseCase.getAllCapacities(params))
-                    .verifyComplete(); // El switchIfEmpty(Flux.empty()) asegura un cierre limpio sin emitir nada
+                    .verifyComplete();
 
             verify(capacityPersistencePort).findAll(params);
             verifyNoInteractions(technologyExternalService);
