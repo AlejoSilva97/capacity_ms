@@ -3,6 +3,7 @@ package com.example.capacity.domain.usecase;
 import com.example.capacity.domain.constants.Constants;
 import com.example.capacity.domain.exceptions.CapacityAlreadyExistsException;
 import com.example.capacity.domain.exceptions.InvalidFieldException;
+import com.example.capacity.domain.exceptions.TechnologyNotFoundException;
 import com.example.capacity.domain.model.Capacity;
 import com.example.capacity.domain.model.PaginationParams;
 import com.example.capacity.domain.model.Technology;
@@ -107,6 +108,32 @@ class CapacityUseCaseTest {
             verifyNoInteractions(technologyExternalService);
         }
 
+        @Test
+        @DisplayName("Should propagate TechnologyNotFoundException when external service fails validation")
+        void registerCapacity_PropagatesException_WhenExternalServiceFails() {
+            // Arrange
+            List<Technology> technologies = List.of(
+                    new Technology(99L, null),
+                    new Technology(2L, null),
+                    new Technology(3L, null)
+            );
+            Capacity capacity = new Capacity(null, "Data Science", "Python and machine learning models", technologies);
+            String expectedErrorMessage = String.format(Constants.TECHNOLOGY_NOT_FOUND, 99L);
+
+            when(capacityPersistencePort.existByName(capacity.name())).thenReturn(Mono.just(false));
+            when(technologyExternalService.verifyTechnologiesById(any()))
+                    .thenReturn(Mono.error(new TechnologyNotFoundException(expectedErrorMessage)));
+
+            // Act & Assert
+            StepVerifier.create(capacityUseCase.registerCapacity(capacity))
+                    .expectErrorMatches(throwable -> throwable instanceof TechnologyNotFoundException
+                            && throwable.getMessage().equals(expectedErrorMessage))
+                    .verify();
+
+            verify(capacityPersistencePort).existByName(capacity.name());
+            verify(technologyExternalService).verifyTechnologiesById(any());
+            verify(capacityPersistencePort, never()).save(any());
+        }
     }
 
     @Nested

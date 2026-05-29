@@ -44,7 +44,7 @@ public class CapacityUseCase implements CapacityServicePort {
                     }
 
                     return technologyExternalService.verifyTechnologiesById(ids)
-                            .then(capacityPersistencePort.save(capacity));
+                            .then(Mono.defer(() -> capacityPersistencePort.save(capacity)));
                 });
     }
 

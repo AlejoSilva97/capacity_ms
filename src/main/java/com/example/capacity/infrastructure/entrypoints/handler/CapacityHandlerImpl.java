@@ -33,7 +33,7 @@ public class CapacityHandlerImpl {
                 )
                 .flatMap(savedCapacity -> ServerResponse
                         .status(HttpStatus.CREATED)
-                        .bodyValue(TechnicalMessage.CAPACITY_CREATED.getMessage()));
+                        .bodyValue(Constants.CAPACITY_CREATED));
     }
 
     public Mono<ServerResponse> getAllCapacities(ServerRequest request) {
