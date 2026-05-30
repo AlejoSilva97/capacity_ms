@@ -97,12 +97,35 @@ public class RouterRest {
                                     @ApiResponse(responseCode = "400", description = "Parámetro 'ids' ausente o con formato inválido")
                             }
                     )
+            ),
+            @RouterOperation(
+                    path = "/capacities/bulk",
+                    method = RequestMethod.GET,
+                    beanClass = CapacityHandlerImpl.class,
+                    beanMethod = "getCapacitiesByIds",
+                    operation = @Operation(
+                            summary = "Obtener múltiples capacidades por lote de IDs",
+                            description = "Retorna una lista de capacidades enriquecidas con sus tecnologías a partir de una lista de IDs. Permite un máximo de 4 IDs por consulta.",
+                            operationId = "getCapacitiesByIds",
+                            parameters = {
+                                    @Parameter(name = "ids", in = ParameterIn.QUERY, description = "Lista de IDs separados por comas (ej. 1,2,3)", required = true, schema = @Schema(type = "string"))
+                            },
+                            responses = {
+                                    @ApiResponse(
+                                            responseCode = "200",
+                                            description = "Lista de capacidades obtenida con éxito",
+                                            content = @Content(array = @ArraySchema(schema = @Schema(implementation = CapacityResponseDTO.class)))
+                                    ),
+                                    @ApiResponse(responseCode = "400", description = "Parámetro 'ids' ausente, con formato incorrecto o si excede el límite de 4 elementos"),
+                                    @ApiResponse(responseCode = "404", description = "No se encontraron coincidencias para ninguna de las capacidades solicitadas")
+                            }
+                    )
             )
     })
     public RouterFunction<ServerResponse> routerFunction(CapacityHandlerImpl capacityHandler) {
         return route(POST("/capacities"), capacityHandler::createCapacity)
                 .andRoute(GET("/capacities"), capacityHandler::getAllCapacities)
                 .andRoute(GET("/capacities/exists"), capacityHandler::validateExistence)
-                .andRoute(GET("/capacities/batch"), capacityHandler::getCapacitiesByIds);
+                .andRoute(GET("/capacities/bulk"), capacityHandler::getCapacitiesByIds);
     }
 }

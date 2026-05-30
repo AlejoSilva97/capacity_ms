@@ -2,8 +2,6 @@ package com.example.capacity.infrastructure.entrypoints.handler;
 
 import com.example.capacity.domain.api.CapacityServicePort;
 import com.example.capacity.domain.constants.Constants;
-import com.example.capacity.domain.enums.TechnicalMessage;
-import com.example.capacity.domain.exceptions.BusinessException;
 import com.example.capacity.domain.exceptions.InvalidFieldException;
 import com.example.capacity.domain.model.PaginationParams;
 import com.example.capacity.infrastructure.entrypoints.dto.CapacityDTO;
@@ -84,8 +82,6 @@ public class CapacityHandlerImpl {
                 .flatMap(list -> ServerResponse
                         .ok()
                         .contentType(MediaType.APPLICATION_JSON)
-                        .bodyValue(list))
-                .onErrorResume(NumberFormatException.class, e ->
-                        Mono.error(new BusinessException(TechnicalMessage.INVALID_PARAMETERS)));
+                        .bodyValue(list));
     }
 }
