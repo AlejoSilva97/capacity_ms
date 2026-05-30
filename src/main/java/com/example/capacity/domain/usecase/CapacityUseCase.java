@@ -1,10 +1,9 @@
 package com.example.capacity.domain.usecase;
 
 import com.example.capacity.domain.constants.Constants;
-import com.example.capacity.domain.enums.TechnicalMessage;
-import com.example.capacity.domain.exceptions.BusinessException;
 import com.example.capacity.domain.exceptions.CapacityAlreadyExistsException;
 import com.example.capacity.domain.exceptions.InvalidFieldException;
+import com.example.capacity.domain.exceptions.NoMatchingCapacitiesException;
 import com.example.capacity.domain.model.Capacity;
 import com.example.capacity.domain.model.PaginationParams;
 import com.example.capacity.domain.model.Technology;
@@ -108,21 +107,23 @@ public class CapacityUseCase implements CapacityServicePort {
 
     private Mono<Void> validateSize(List<Long> uniqueIds) {
         return uniqueIds.size() > 4
-                ? Mono.error(new BusinessException(TechnicalMessage.INVALID_PARAMETERS))
+                ? Mono.error(new InvalidFieldException(Constants.CAPACITIES_SIZE_VALIDATION_MESSAGE))
                 : Mono.empty();
     }
 
     @Override
     public Flux<Capacity> getCapacitiesByIds(List<Long> ids) {
-        if (ids == null || ids.isEmpty() || ids.size() > 4) {
-            return Flux.error(new BusinessException(TechnicalMessage.INVALID_PARAMETERS));
+        if (org.springframework.util.CollectionUtils.isEmpty(ids)) {
+            return Flux.empty();
         }
+
         List<Long> uniqueIds = ids.stream().distinct().toList();
-//        return capacityPersistencePort.findAllByIds(uniqueIds)
-//                .collectList()
-//                .filter(capacities -> !capacities.isEmpty())
-//                .flatMapMany(this::enrichCapacitiesWithTechnologies)
-//                .switchIfEmpty(Flux.empty());
-        return Flux.empty();
+
+        return validateSize(uniqueIds)
+                .thenMany(Flux.defer(() -> capacityPersistencePort.findAllByIds(uniqueIds)))
+                .collectList()
+                .filter(capacities -> !capacities.isEmpty())
+                .flatMapMany(this::enrichCapacitiesWithTechnologies)
+                .switchIfEmpty(Flux.error(new NoMatchingCapacitiesException(Constants.NO_MATCH_CAPACITIES)));
     }
 }
