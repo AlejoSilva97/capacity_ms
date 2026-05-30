@@ -75,12 +75,34 @@ public class RouterRest {
                                     @ApiResponse(responseCode = "400", description = "Parámetros de consulta inválidos o con formato incorrecto")
                             }
                     )
+            ),
+            @RouterOperation(
+                    path = "/capacities/exists",
+                    method = RequestMethod.GET,
+                    beanClass = CapacityHandlerImpl.class,
+                    beanMethod = "validateExistence",
+                    operation = @Operation(
+                            summary = "Verificar la existencia de múltiples capacidades por ID",
+                            description = "Valida si un conjunto de identificadores de capacidad pasados por parámetros existen en su totalidad dentro del sistema.",
+                            operationId = "validateExistence",
+                            parameters = {
+                                    @Parameter(name = "ids", in = ParameterIn.QUERY, description = "Lista de IDs separados por comas (ej. 1,2,3)", required = true, schema = @Schema(type = "string"))
+                            },
+                            responses = {
+                                    @ApiResponse(
+                                            responseCode = "200",
+                                            description = "Validación ejecutada con éxito (retorna true si todas existen, false en caso contrario)",
+                                            content = @Content(schema = @Schema(implementation = Boolean.class))
+                                    ),
+                                    @ApiResponse(responseCode = "400", description = "Parámetro 'ids' ausente o con formato inválido")
+                            }
+                    )
             )
     })
     public RouterFunction<ServerResponse> routerFunction(CapacityHandlerImpl capacityHandler) {
         return route(POST("/capacities"), capacityHandler::createCapacity)
                 .andRoute(GET("/capacities"), capacityHandler::getAllCapacities)
-                .andRoute(GET("/capacities/validate-existence"), capacityHandler::validateExistence)
+                .andRoute(GET("/capacities/exists"), capacityHandler::validateExistence)
                 .andRoute(GET("/capacities/batch"), capacityHandler::getCapacitiesByIds);
     }
 }

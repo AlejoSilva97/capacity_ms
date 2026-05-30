@@ -15,4 +15,6 @@ public class Constants {
     public static final String DUPLICATE_TECHNOLOGIES_NOT_ALLOWED = "The technology list cannot contain duplicate values";
     public static final String TECHNOLOGY_NOT_FOUND = "Technology with id %s not found";
     public static final String CAPACITY_CREATED_SUCCESS = "Capacity created successfully";
+    public static final String IDS_PARAMS_REQUIRED = "The 'ids' query parameter is required and cannot be empty";
+    public static final String IDS_FORMAT_INVALID = "The 'ids' parameter must contain only valid numeric values";
 }
