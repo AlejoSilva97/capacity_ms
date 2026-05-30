@@ -4,6 +4,7 @@ import com.example.capacity.domain.api.CapacityServicePort;
 import com.example.capacity.domain.constants.Constants;
 import com.example.capacity.domain.enums.TechnicalMessage;
 import com.example.capacity.domain.exceptions.BusinessException;
+import com.example.capacity.domain.exceptions.InvalidFieldException;
 import com.example.capacity.domain.model.PaginationParams;
 import com.example.capacity.infrastructure.entrypoints.dto.CapacityDTO;
 import com.example.capacity.infrastructure.entrypoints.mapper.CapacityMapper;
@@ -56,32 +57,23 @@ public class CapacityHandlerImpl {
     public Mono<ServerResponse> validateExistence(ServerRequest request) {
         return extractAndParseIds(request)
                 .flatMap(capacityServicePort::validateCapacitiesExist)
-                .flatMap(this::buildSuccessResponse)
-                .onErrorResume(NumberFormatException.class, e ->
-                        Mono.error(new BusinessException(TechnicalMessage.INVALID_PARAMETERS)));
+                .flatMap(exists -> ServerResponse
+                        .ok()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(exists));
     }
 
     private Mono<List<Long>> extractAndParseIds(ServerRequest request) {
-        return Mono.fromCallable(() -> {
-            List<String> idsParam = request.queryParams().get("ids");
-
-            if (org.springframework.util.CollectionUtils.isEmpty(idsParam) || idsParam.get(0).isBlank()) {
-                throw new BusinessException(TechnicalMessage.INVALID_PARAMETERS);
-            }
-
-            return idsParam.stream()
-                    .flatMap(s -> java.util.Arrays.stream(s.split(",")))
-                    .map(String::trim)
-                    .map(Long::valueOf)
-                    .toList();
-        });
-    }
-
-    private Mono<ServerResponse> buildSuccessResponse(Boolean exists) {
-        return ServerResponse
-                .ok()
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(exists);
+        return Mono.justOrEmpty(request.queryParams().get("ids"))
+                .filter(idsParam -> !idsParam.isEmpty() && !idsParam.get(0).isBlank())
+                .switchIfEmpty(Mono.error(new InvalidFieldException(Constants.IDS_PARAMS_REQUIRED)))
+                .map(idsParam -> idsParam.stream()
+                        .flatMap(s -> java.util.Arrays.stream(s.split(",")))
+                        .map(String::trim)
+                        .map(Long::valueOf)
+                        .toList())
+                .onErrorMap(NumberFormatException.class, e ->
+                        new InvalidFieldException(Constants.IDS_FORMAT_INVALID));
     }
 
     public Mono<ServerResponse> getCapacitiesByIds(ServerRequest request) {
