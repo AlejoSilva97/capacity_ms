@@ -126,4 +126,30 @@ public class CapacityUseCase implements CapacityServicePort {
                 .flatMapMany(this::enrichCapacitiesWithTechnologies)
                 .switchIfEmpty(Flux.error(new NoMatchingCapacitiesException(Constants.NO_MATCH_CAPACITIES)));
     }
+
+    @Override
+    public Mono<Void> deleteById(List<Long> ids) {
+        if (org.springframework.util.CollectionUtils.isEmpty(ids)) {
+            return Mono.error(new InvalidFieldException(Constants.IDS_PARAMS_REQUIRED));
+        }
+
+        List<Long> uniqueIds = ids.stream().distinct().toList();
+
+        return capacityPersistencePort.countByIds(uniqueIds)
+                .flatMap(count -> {
+                    if (count != uniqueIds.size()) {
+                        return Mono.error(new NoMatchingCapacitiesException(Constants.NO_MATCH_CAPACITIES));
+                    }
+                    return capacityPersistencePort.findOrphanTechnologyIds(uniqueIds).collectList();
+                })
+                .flatMap(orphanTechIds ->
+                        capacityPersistencePort.deleteAllByIds(uniqueIds)
+                                .then(Mono.defer(() -> {
+                                    if (orphanTechIds.isEmpty()) {
+                                        return Mono.empty();
+                                    }
+                                    return technologyExternalService.deleteTechnologiesByIds(orphanTechIds);
+                                }))
+                );
+    }
 }

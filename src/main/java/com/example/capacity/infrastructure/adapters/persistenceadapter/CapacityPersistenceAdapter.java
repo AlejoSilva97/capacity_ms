@@ -12,6 +12,7 @@ import com.example.capacity.infrastructure.adapters.persistenceadapter.repositor
 import com.example.capacity.infrastructure.adapters.persistenceadapter.repository.CapacityTechnologyRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.r2dbc.core.DatabaseClient;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -100,5 +101,17 @@ public class CapacityPersistenceAdapter implements CapacityPersistencePort {
                 .filter(entities -> !entities.isEmpty())
                 .flatMapMany(this::enrichEntitiesWithRelations)
                 .switchIfEmpty(Flux.empty());
+    }
+
+    @Override
+    public Flux<Long> findOrphanTechnologyIds(List<Long> ids) {
+        return capacityTechnologyRepository.findOrphanTechnologyIds(ids);
+    }
+
+    @Override
+    @Transactional
+    public Mono<Void> deleteAllByIds(List<Long> ids) {
+        return capacityTechnologyRepository.deleteByIdCapacityIn(ids)
+                .then(capacityRepository.deleteAllById(ids));
     }
 }

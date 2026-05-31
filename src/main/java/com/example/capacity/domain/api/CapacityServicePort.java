@@ -12,4 +12,5 @@ public interface CapacityServicePort {
     Flux<Capacity> getAllCapacities(PaginationParams params);
     Mono <Boolean> validateCapacitiesExist(List<Long> ids);
     Flux<Capacity> getCapacitiesByIds(List<Long> ids);
+    Mono<Void> deleteById(List<Long> ids);
 }
