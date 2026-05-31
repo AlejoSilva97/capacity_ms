@@ -22,4 +22,5 @@ public class Constants {
     public static final String IDS_FORMAT_INVALID = "The 'ids' parameter must contain only valid numeric values";
     public static final String INTERNAL_ERROR = "Something went wrong, please try again";
     public static final String NO_MATCH_CAPACITIES = "Not found any capacity";
+    public static final String TECHNOLOGY_COULD_NOT_BE_DELETED = "Technology with ID {} could not be deleted externally or was already removed: {}";
 }

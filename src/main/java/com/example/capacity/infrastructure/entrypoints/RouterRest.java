@@ -19,8 +19,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.ServerResponse;
 
-import static org.springframework.web.reactive.function.server.RequestPredicates.GET;
-import static org.springframework.web.reactive.function.server.RequestPredicates.POST;
+import static org.springframework.web.reactive.function.server.RequestPredicates.*;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 
 @Configuration
@@ -120,12 +119,32 @@ public class RouterRest {
                                     @ApiResponse(responseCode = "404", description = "No se encontraron coincidencias para ninguna de las capacidades solicitadas")
                             }
                     )
+            ),
+            @RouterOperation(
+                    path = "/capacities",
+                    method = RequestMethod.DELETE,
+                    beanClass = CapacityHandlerImpl.class,
+                    beanMethod = "deleteCapacities",
+                    operation = @Operation(
+                            summary = "Eliminar capacidades por lote y sus tecnologías huérfanas",
+                            description = "Elimina las capacidades especificadas y limpia de forma transaccional las tecnologías asociadas si no pertenecen a ningún otro bootcamp o capacidad.",
+                            operationId = "deleteCapacities",
+                            parameters = {
+                                    @Parameter(name = "ids", in = ParameterIn.QUERY, description = "Lista de IDs de capacidades separados por comas (ej. 1,2,3)", required = true, schema = @Schema(type = "string"))
+                            },
+                            responses = {
+                                    @ApiResponse(responseCode = "204", description = "Capacidades y tecnologías huérfanas eliminadas con éxito"),
+                                    @ApiResponse(responseCode = "400", description = "Parámetro 'ids' ausente o con formato inválido"),
+                                    @ApiResponse(responseCode = "404", description = "No se encontraron capacidades coincidentes con los IDs provistos")
+                            }
+                    )
             )
     })
     public RouterFunction<ServerResponse> routerFunction(CapacityHandlerImpl capacityHandler) {
         return route(POST("/capacities"), capacityHandler::createCapacity)
                 .andRoute(GET("/capacities"), capacityHandler::getAllCapacities)
                 .andRoute(GET("/capacities/exists"), capacityHandler::validateExistence)
-                .andRoute(GET("/capacities/bulk"), capacityHandler::getCapacitiesByIds);
+                .andRoute(GET("/capacities/bulk"), capacityHandler::getCapacitiesByIds)
+                .andRoute(DELETE("/capacities"), capacityHandler::deleteCapacities);
     }
 }

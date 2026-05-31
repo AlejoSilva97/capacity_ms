@@ -4,7 +4,6 @@ import com.example.capacity.domain.model.Capacity;
 import com.example.capacity.domain.model.PaginationParams;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
 import java.util.List;
 
 public interface CapacityPersistencePort {
@@ -13,4 +12,6 @@ public interface CapacityPersistencePort {
     Flux<Capacity> findAll(PaginationParams params);
     Mono<Long> countByIds(List<Long> ids);
     Flux<Capacity> findAllByIds(List<Long> ids);
+    Mono<Void> deleteAllByIds(List<Long> ids);
+    Flux<Long> findOrphanTechnologyIds(List<Long> ids);
 }

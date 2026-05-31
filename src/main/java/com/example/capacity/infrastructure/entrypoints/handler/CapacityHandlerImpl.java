@@ -84,4 +84,10 @@ public class CapacityHandlerImpl {
                         .contentType(MediaType.APPLICATION_JSON)
                         .bodyValue(list));
     }
+
+    public Mono<ServerResponse> deleteCapacities(ServerRequest request) {
+        return extractAndParseIds(request)
+                .flatMap(capacityServicePort::deleteById)
+                .then(ServerResponse.noContent().build());
+    }
 }
